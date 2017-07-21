@@ -104,7 +104,7 @@ for idx=1:num_fat_peaks,
     system_command_string = sprintf('%s "%.5e"', system_command_string, input.fat_R2s(idx) );
 end
 
-%disp(system_command_string);
+disp(system_command_string);
 
 %% Call DixonApp executable
 [status,result] = system(system_command_string);

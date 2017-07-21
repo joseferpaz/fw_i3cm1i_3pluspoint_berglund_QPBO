@@ -1,3 +1,6 @@
+test_berglund_QPBO_diary.txt
+*.png
+.DS_Store
 *.inp
 *.vtk
 *.c
