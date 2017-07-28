@@ -97,7 +97,7 @@ for c=1:17, % All cases
     R2pngfilename = sprintf('%s/R2_%02d_fw_i3cm1i_3pluspoint_berglund_QPBO.png', test_results_folder, c);
     imwrite(R2(:,:), R2pngfilename, 'PNG', 'BitDepth', 8, 'Author', 'fw_i3cm1i_3pluspoint_berglund_QPBO', 'Description', sprintf('2012 ISMRM Fat Water Challenge : Case %02d : %s', c, datestr(now)) );
     
-    FM = outParams.fieldmap;
+    FM = outParams.map;
     FM = FM - min(FM(:));
     FM = FM / max(FM(:));
     FMpngfilename = sprintf('%s/FM_%02d_fw_i3cm1i_3pluspoint_berglund_QPBO.png', test_results_folder, c);
