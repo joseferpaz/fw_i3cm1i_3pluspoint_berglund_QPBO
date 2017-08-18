@@ -497,18 +497,29 @@ validParams = 0;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% average redundant echo times
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %nTE = 5
     TE_usec_unique = unique( round(1e6*(imDataParams.TE(:))) );
     nTE_usec_unique = length(TE_usec_unique(:));
+    
     if nTE_usec_unique~=nTE,
         if algoParams.verbose,
             disp( sprintf('fw_i3cm1i_3pluspoint_berglund_QPBO: Found %d unique echo times out of %d provided echo times : Redundant echo times will be averaged', nTE_usec_unique, nTE) );
         end
         images_tmp = zeros([nx ny nz 1 nTE_usec_unique]);
         TE_tmp = zeros(nTE_usec_unique,1);
+        disp(fprintf('WE GOOD'))
+        
         for kTE=1:nTE_usec_unique,
+            disp(fprintf('WE ARE GOOD still'))
             idx_TE = find(TE_usec_unique(kTE)==imDataParams.TE(:));
+            disp(fprintf('WE ARE GOOD still?'))
+            disp(idx_TE) %% NO OUTPUT
+            disp(fprintf('WE ARE GOOD still.. apparently'))
             images_tmp(:,:,:,1,kTE) = sum(imDataParams.images(:,:,:,1,idx_TE),5)/length(idx_TE(:));
-            TE_tmp(kTE) = imDataParams.TE(idx_TE(1));
+            disp(fprintf('WE ARE GOOD still?...really?'))
+            TE_tmp(kTE) = imDataParams.TE(idx_TE(1)); %%%PROBLEM
+            %TE_tmp(kTE) = imDataParams.TE(1); %FIXED???? PROBABLY NOT but the problem begins where idx_TE is defined!
+            disp(fprintf('final line execute!'))
         end
         imDataParams.images = images_tmp;
         imDataParams.TE = TE_tmp;
@@ -520,14 +531,24 @@ validParams = 0;
     %% detect indices and number of evenly spaced echoes, idx_TEeven and nTEeven
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     dTE_usec = round(1e6*diff(imDataParams.TE(:)));
+    disp(imDataParams.TE(:))
     dTE_candidates = dTE_usec(:);
+    
+    
     for idx_dTE = 1:length(dTE_usec(:)),
+   
         dTE_candidates = unique([dTE_candidates(:) ; cumsum(dTE_usec(idx_dTE:end)) ]);
+        
     end
+    
     dTE_candidates = unique(dTE_candidates(:));
+    
+    disp(length(dTE_candidates))
 
-    best_echoes = [];
+    best_echoes = []; 
     for idx_dTE_candidate = 1:length(dTE_candidates),
+        
+        disp(fprintf('ITERATION!!!'))
         target_dTE_usec = dTE_candidates(idx_dTE_candidate);
         ne = length(imDataParams.TE);
 
@@ -535,7 +556,10 @@ validParams = 0;
         dTE_groups = {};
         for idx=1:(ne-1),
             dTE_groups{idx}.dTE_usec = dTE_usec(idx);
-            dTE_groups{idx}.echoes = [idx idx+1];
+            %disp( dTE_usec(idx));
+            dTE_groups{idx}.echoes =  [idx idx+1];
+            %disp(  [idx idx+1]);
+            
         end
 
         % combine dTE_groups
@@ -546,9 +570,17 @@ validParams = 0;
                 % combine with next group
                     if idx<(ne-1),
                         dTE_groups{idx+1}.dTE_usec = dTE_groups{idx}.dTE_usec + dTE_groups{idx+1}.dTE_usec;
-                        dTE_groups{idx+1}.echoes = [dTE_groups{idx}.echoes(1:end-1) dTE_groups{idx+1}.echoes(2:end)];
+                        dTE_groups{idx+1}.echoes = [dTE_groups{idx}.echoes(1:end-1) dTE_groups{idx+1}.echoes(2:end)];%,---
                         dTE_groups{idx}.dTE_usec = NaN;
                         dTE_groups{idx}.echoes = [];
+                        
+                        disp(dTE_groups{idx+1}.echoes)
+                        disp(fprintf('combine with nextr group part done'))
+                        %disp( dTE_groups{idx+1}.dTE_usec)
+                        %disp( fprintf('ECHOES p1'))
+                        %disp( dTE_groups{idx}.echoes(1:end))
+                        %disp( fprintf('ECHOES p2'))
+                        %disp( dTE_groups{idx+1}.echoes(2:end))
                     else
                         dTE_groups{idx}.dTE_usec = NaN;
                         dTE_groups{idx}.echoes = [];
@@ -561,14 +593,23 @@ validParams = 0;
         end
 
         % find usable TE set
-        echoes_to_use = [];
+        echoes_to_use = []; 
         idx = 1;
         while idx <= (ne-1),
             if ( isnan(dTE_groups{idx}.dTE_usec) && (length(echoes_to_use)>0) ),
                 break;
             end
             if ~isnan(dTE_groups{idx}.dTE_usec),
+                %disp(fprintf('the two above are put together'))
+                %disp(echoes_to_use)
+                %disp(dTE_groups{idx}.echoes)
+                %disp(fprintf('equal'))
+                
+                %disp(fprintf('this is the thing where you get 01 01 01'))
                 echoes_to_use = [echoes_to_use dTE_groups{idx}.echoes];
+                %disp(echoes_to_use)
+                
+                %disp(fprintf('isnan loop ended'))
             end
             idx = idx + 1;
         end

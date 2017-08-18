@@ -36,10 +36,10 @@ algoParams.B0_smooth_in_stack_direction = false; % flag for B0 smooth in stack d
 algoParams.multigrid = true; % flag for multi-level resolution pyramid
 algoParams.estimate_R2 = true; % flag to estimate R2star
 algoParams.verbose = true; % flag for verbose status messages (default false)
-algoParams.process_in_3D = false; % flag to process in 3D (default true)
+algoParams.process_in_3D = true; % flag to process in 3D (default true)
 algoParams.R2star_calibration = true; % flag to perform R2* calibration (default false)
 algoParams.ICM_iterations = 2; % ICM iterations
-algoParams.num_B0_labels = 100; % number of discretized B0 values
+algoParams.F = 100; % number of discretized B0 values
 algoParams.mu = 10; % regularization parameter
 algoParams.R2_stepsize = 1; % R2 stepsize in s^-1
 algoParams.max_R2 = 120; % maximum R2 in s^-1
@@ -61,7 +61,10 @@ for c=1:17, % All cases
     case_matfilename = sprintf('%s/%02d.mat', case_folder, c);
     load(case_matfilename);
     [nx ny nz ncoils nTE] = size(imDataParams.images);
-        
+    
+    % avoid cropping
+    imDataParams.mask = ones(size(imDataParams.images));
+    
     outParams = fw_i3cm1i_3pluspoint_berglund_QPBO(imDataParams,algoParams);
     
     FW = cat(3, abs(outParams.species(2).amps), abs(outParams.species(1).amps) );

@@ -1,0 +1,14 @@
+fw_i3cm1i_3pluspoint_berglund_QPBO: Available evenly space echoes confirmed with delta TE = 0.001648 seconds
+fw_i3cm1i_3pluspoint_berglund_QPBO: Found 6 of 6 evenly spaced echoes. idx_nTEeven = [ 1 2 3 4 5 6 ]
+fw_i3cm1i_3pluspoint_berglund_QPBO: Performing R2* calibration with initial max R2* = 800.00
+fw_i3cm1i_3pluspoint_berglund_QPBO: R2* Calibration: Cropping 3D to [ 1:192 , 1:192 , 4] (100.00%)
+if system_dependent('IsDebugMode')==1, dbquit; end
+which readVTK
+/Users/joseferpaz/Documents/MATLAB/readVTK.m
+tmp = readVTK('/Users/joseferpaz/Documents/Vanderbilt Internship/fw_i3cm1i_3pluspoint_berglund_QPBO/berglund/QPBO/DixonApp/vtk/DixonApp_Input_echo0001_re.vtk');
+whos tmp
+  Name        Size                Bytes  Class    Attributes
+
+  tmp       192x192x4            294912  int16              
+
+imagesc( tmp(:,:,1) ); axis image; colormap(gray);

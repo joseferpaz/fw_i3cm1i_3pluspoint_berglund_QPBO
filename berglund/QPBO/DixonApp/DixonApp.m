@@ -1,4 +1,4 @@
-% DixonApp  Binary MRF energy minimization on non-submodular graphs
+ % DixonApp  Binary MRF energy minimization on non-submodular graphs
 %
 %   [] = DixonApp()
 %
@@ -199,6 +199,9 @@ elseif( strcmp(tp, 'double') > 0 )
 end
 
 fprintf(fid, '%s\n', 'LOOKUP_TABLE default');
+
+% start file over again for debug purpose (just write binary)
+%fclose(fid); fid = fopen(vtkfile,'w','b');
 
 % write data as binary
 fwrite(fid,vol,tp);

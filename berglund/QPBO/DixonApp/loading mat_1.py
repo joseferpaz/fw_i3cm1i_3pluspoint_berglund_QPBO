@@ -2,38 +2,25 @@ import scipy.io as sio
 import numpy as np
 import os
 import re
+import struct
+
+from test_&_setup.py import *
+
 #import AlgoParams
 
-############### Dixon app is really just a huge function ###########################
+############### Dixon app is really just a huge function ################################################################################
 
-#########################################################################################
+##############################################################################################################################################
 ###########################  Defining variables
-#########################################################################################
+##############################################################################################################################################
 i = 0
 path = '/Users/joseferpaz/Documents/Vanderbilt Internship/fw_i3cm1i_3pluspoint_berglund_QPBO/test_cases'
 file_list = os.listdir(path)
-edit_path = path + '/' + file_list[i]  #This is a list of all of the .mat files
-vtk_max = 2^14-1
+  #This is a list of all of the .mat files
+vtk_max = 2**14-1
 
-decoupled_estimation = true # flag for decoupled R2 estimation
-Fibonacci_search = true # flag for Fibonacci search
-B0_smooth_in_stack_direction = false # flag for B0 smooth in stack direction
-multigrid = true # flag for multi-level resolution pyramid
-estimate_R2 = true # flag to estimate R2star
-verbose = true # flag for verbose status messages (default false)
-R2_stepsize = 1
-mu = 10
-max_R2 = 120; # maximum R2 in s^-1
-max_label_change = 0.1; #
-fine_R2_stepsize = 1.0; # Fine stepsize for discretization of R2(*) [s^-1] (used in decoupled fine-tuning step)
-coarse_R2_stepsize = 10.0; # Coarse stepsize for discretization of R2(*) [s^-1] (used for joint estimation step, value 0.0 --> Decoupled estimation only
-water_R2 = 0.0; # Water R2 [sec-1]
+############################# TEMPORARY (for testing purposes) ############################################################################
 
-#sub_num1 = num_array[0]
-#image_array = num_array[0][0] # <---- This is kinda hardcoded so in the future find an alternative to it.
-#sub_num3 = num_array[0][0][0]
-#sub_num4 = num_array[0][0][0][0]
-#sub_num5 = num_array[0][0][0][0][0]
 
 DixonApp_parent_folder = os.path.dirname(os.path.abspath(__file__))
 DixonApp_vtk_folder = DixonApp_parent_folder + "/vtk"
@@ -41,37 +28,36 @@ DixonApp_vtk_prefix_input  = 'DixonApp_Input'
 DixonApp_vtk_prefix_output = 'DixonApp_Output'
 
 
-#########################################################################################
+##############################################################################################################################################
 ################### Functions!
-#########################################################################################
+##############################################################################################################################################
 
 def write_VTK(vol,vtkfile):
 
     #where vol is the 3D matrix... but is it really?
     #it isn't but we ignore the rest because we don't need it
     sz = np.shape(vol)
-    X = sz[1]
-    Y = sz[2]
+    X = sz[0]
+    Y = sz[1]
     Z = 1
 
     if (len(sz) == 3):
-        Z = sz[3]
+        Z = sz[2]
 
         # where s is a string
 
 
-    fid = open(vtkfile,'a+')
+    fid = open(vtkfile,'wb')
 
     #fid = open(vtkfile....)???????!!!!!####,'w','b')
     ## Well, apparently it just tells the system that you'll be writting the strings
     ## to come in binary
 
-    header = """
-    # vtk DataFile Version 3.0);
-    created by writeVTK (Matlab implementation by Erik Vidholm)
-    BINARY
-    DATASET STRUCTURED_POINTS
-    """
+    header = """# vtk DataFile Version 3.0)
+created by writeVTK (Matlab implementation by Erik Vidholm)
+BINARY
+DATASET STRUCTURED_POINTS
+"""
 
     header += '%s%d%c%d%c%d\n' % ('DIMENSIONS ', X, ' ', Y, ' ', Z);
     header += '%s%f%c%f%c%f\n' % ('ORIGIN ', 0.0, ' ', 0.0, ' ', 0.0);
@@ -80,28 +66,51 @@ def write_VTK(vol,vtkfile):
 
     vol_dataType = vol.dtype
 
-    if vol_dataType == uint8 :
+    if vol_dataType == 'uint8':
         header += 'SCALARS image_data unsigned_char\n'
-    elif vol_dataType == int8 :
+    elif vol_dataType == 'int8':
         header += 'SCALARS image_data char\n'
-    elif vol_dataType == uint16 :
+    elif vol_dataType == 'uint16':
         header += 'SCALARS image_data unsigned_short\n'
-    elif vol_dataType == int16 :
+    elif vol_dataType == 'int16':
         header += 'SCALARS image_data short\n'
-    elif vol_dataType == uint32 :
+    elif vol_dataType == 'uint32':
         header += 'SCALARS image_data unsigned_int\n'
-    elif vol_dataType == int32 :
-      header += 'SCALARS image_data int\n'
-    elif vol_dataType == float32 :
-      header += 'SCALARS image_data float\n'
-    elif vol_dataType == float64 :
-      header += 'SCALARS image_data double\n'
+    elif vol_dataType == 'int32':
+        header += 'SCALARS image_data int\n'
+    elif vol_dataType == 'float32':
+        header += 'SCALARS image_data float\n'
+    elif vol_dataType == 'float64':
+        header += 'SCALARS image_data double\n'
 
     header += 'LOOKUP_TABLE default\n' #Make sure to print 'header' to check
 
-    header.encode('utf-16BE')
-    fid.write(header)
+    #header.encode('utf-16BE')
+    #inf_2 = bytearray(vol)
+    #info = np.array2string(vol)
+    #vol.tofile(vtkfile)
+    #inf = info.encode('utf-16BE')
+    #inf_2 = struct.pack('>I', vol)
+    #fid.write(header)
+    #fid.write(inf)
+    #fid.write(inf_2)
+    #vol.tofile(fid)
+    #fid.write(vol.tobytes())
+
+    # eliminate echo dimension
+    vol = vol.squeeze()
+
+    # byteswap when needed
+    vol = vol.byteswap()
+
+    # make slice dimension the first index
+    vol = vol.transpose( (2, 0, 1) )
+
+    vol.astype('int16').tofile(vtkfile)
+
+    #fid.write(bytearray(vol))
     fid.close()
+
 
 def read_VTK(vtkfile):
 
@@ -140,9 +149,13 @@ print file_list     #Just double checking...
 #THIS IS READY TO DO EVERY FILE INDIVIDUALLY
 #for filename in file_list:
 
-#########################################################################################
+##############################################################################################################################################
 ############## Calling the information from the mat file
-#########################################################################################
+##############################################################################################################################################
+
+#for i in file_list:
+    #a = 0
+edit_path = path + '/' + file_list[i]
 
 mat = sio.loadmat(edit_path)
 
@@ -171,10 +184,10 @@ print "-" * 100
 print "These are the echo times: " , echo_times
 
 #Attempting to get the values that are ultimately written in the file ----NOT FINISHED
-for idx_echo in range(1,ne):
+for idx_echo in range(ne):
 
-    image_re = (np.real(image_array[:,:,:,:,idx_echo])*(vtk_max/images_max))
-    image_im = (np.imag(image_array[:,:,:,:,idx_echo])*(vtk_max/images_max))
+    image_re = np.array(np.real(image_array[:,:,:,:,idx_echo])*(vtk_max/images_max),dtype = np.int16)
+    image_im = np.array(np.imag(image_array[:,:,:,:,idx_echo])*(vtk_max/images_max),dtype = np.int16)
 
     #vtk file names that have to be part of a loop
     vtk_filename_re = '%s/%s_echo%04d_re.vtk' % (DixonApp_vtk_folder, DixonApp_vtk_prefix_input, idx_echo)
@@ -188,9 +201,9 @@ for idx_echo in range(1,ne):
     ## SO (one for the real and one for the imaginary ) for every iteration
 
 
-#########################################################################################
+##############################################################################################################################################
 ########################### Making THE string
-#########################################################################################
+##############################################################################################################################################
 
 ### Dixon stuff is being defined where the rest of the variables are
 
@@ -204,7 +217,6 @@ system_command_string_prefix = '%s "%s"' % (system_command_string_prefix, DixonA
 system_command_string_prefix = '%s "%s"' % (system_command_string_prefix, DixonApp_vtk_prefix_input)
 system_command_string_prefix = '%s "%s"' % (system_command_string_prefix, DixonApp_vtk_prefix_output)
 
-print system_command_string_prefix
 
 system_command_string = system_command_string_prefix;
 
@@ -218,21 +230,27 @@ system_command_string = '%s "%d"' % (system_command_string, B0_smooth_in_stack_d
 
 # floats (11)
 
-F = mat['imDataParams']['FieldStrength']; FS = F[0][0]; ## temporary fix
-system_command_string = '%s "%.5e"' % (system_command_string, FS);
-
 #system_command_string = sprintf('%s "%.5e"', system_command_string, input.te_used);
 #system_command_string = sprintf('%s "%.5e"', system_command_string, input.dte_used);
 #system_command_string = sprintf('%s "%.5e"', system_command_string, input.water_chemical_shift);
-system_command_string = sprintf('%s "%.5e"', system_command_string, mu);
-system_command_string = sprintf('%s "%.5e"', system_command_string, R2_stepsize);
-system_command_string = sprintf('%s "%.5e"', system_command_string, max_R2);
-system_command_string = sprintf('%s "%.5e"', system_command_string, max_label_change);
+system_command_string = '%s "%.5e"' % (system_command_string, mu)
+system_command_string ='%s "%.5e"' % (system_command_string, R2_stepsize)
+system_command_string ='%s "%.5e"' % (system_command_string, max_R2)
+system_command_string ='%s "%.5e"' % (system_command_string, max_label_change)
 #ystem_command_string = sprintf('%s "%.5e"', system_command_string, input.InplaneOverThroughplaneVoxelsize);
-system_command_string = sprintf('%s "%.5e"', system_command_string, fine_R2_stepsize);
-system_command_string = sprintf('%s "%.5e"', system_command_string, coarse_R2_stepsize);
-system_command_string = sprintf('%s "%.5e"', system_command_string, water_R2);
+system_command_string ='%s "%.5e"' % (system_command_string, fine_R2_stepsize)
+system_command_string ='%s "%.5e"' % (system_command_string, coarse_R2_stepsize)
+system_command_string ='%s "%.5e"' % (system_command_string, water_R2)
 
+#integers (4)
+system_command_string = '%s "%d"' % (system_command_string, num_B0_labels)
+system_command_string = sprintf('%s "%d"', system_command_string, input.ICM_iterations);
+system_command_string = sprintf('%s "%d"', system_command_string, input.use_num_echos); ## use_num_echos = nTE_even or something
+num_fat_peaks = length(input.fat_chemical_shifts);
+system_command_string = sprintf('%s "%d"', system_command_string, num_fat_peaks );
+
+
+print system_command_string
 #DixonQPBO_input.verbose = algoParams.verbose;
 #DixonQPBO_input.decoupled_estimation = algoParams.decoupled_estimation;
 #DixonQPBO_input.Fibonacci_search = algoParams.Fibonacci_search;
@@ -242,7 +260,7 @@ system_command_string = sprintf('%s "%.5e"', system_command_string, water_R2);
 #if ( (algoParams.estimate_R2) && (imDataParams.nTEeven>=4) ),
 #    DixonQPBO_input.estimate_R2 = true;
 #else
-#    DixonQPBO_input.estimate_R2 = false;
+#    DixonQPBO_input.estimate_R2 = False;
 #
 
 
